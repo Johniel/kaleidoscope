@@ -15,9 +15,18 @@ namespace kaleidoscope {
 
     class Parser {
     private:
-      std::map<char, int> binop_precedence_;
+      Token* curr_token_ = NULL;
     public:
+      std::map<char, int> binop_precedence_;
+      kaleidoscope::lexer::Lexer* lexer_;
+
+      Parser();
+
+      Exp *error(const char *str) { fprintf(stderr, "Error: %s\n", str); return NULL; }
+      Prototype *errorProt(const char *str) { error(str); return NULL; }
+
       Token* getNextToken(void);
+
       kaleidoscope::ast::Exp* parseExpression(void);
       kaleidoscope::ast::Exp* parseIdentifierExpr(void);
       kaleidoscope::ast::Exp* parseNumberExpr(void);

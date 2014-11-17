@@ -1,29 +1,54 @@
 #include "parser.hpp"
 
-/// identifierexpr
-///   ::= identifier
-///   ::= identifier '(' expression* ')'
+using namespace kaleidoscope::parser;
 
+namespace {};
 
-/// primary
-///   ::= identifierexpr
-///   ::= numberexpr
-///   ::= parenexpr
+Parser::Parser()
+{
+  this->lexer_ = new Lexer();
+}
 
-
-/// binoprhs
-///   ::= ('+' primary)*
-
+Token* Parser::getNextToken(void)
+{
+  curr_token_ = this->lexer_->front();
+  this->lexer_->pop();
+  return this->curr_token_;
+}
 
 /// expression
 ///   ::= primary binoprhs
 ///
+Exp* Parser::parseExpression(void)
+{
+  Exp* left = this->parsePrimary();
+  if (!left) return NULL;
+
+  return this->parseBinOpR(NULL, left);
+}
 
 /// prototype
 ///   ::= id '(' id* ')'
+kaleidoscope::ast::Prototype* Parser::parsePrototype(void)
+{
+  if (dynamic_cast<IdentifierToken*>(this->curr_token_) == NULL) {
+    return errorProt("Expected function name in prototype");
+  }
 
-/// definition ::= 'def' prototype expression
+  std::string fn_name = IdentifierStr;
+  getNextToken();
 
-/// toplevelexpr ::= expression
+  if (CurTok != '(')
+    return ErrorP("Expected '(' in prototype");
 
-/// external ::= 'extern' prototype
+  std::vector<std::string> ArgNames;
+  while (getNextToken() == tok_identifier)
+    ArgNames.push_back(IdentifierStr);
+  if (CurTok != ')')
+    return ErrorP("Expected ')' in prototype");
+
+  // success.
+  getNextToken();  // eat ')'.
+
+  return new Prototype(fn_name, ArgNames);
+}
