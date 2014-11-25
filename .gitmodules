@@ -1,0 +1,6 @@
+[submodule "lib/Sphingid"]
+	path = lib/Sphingid
+	url = https://github.com/Johniel/Sphingid
+[submodule "lib/--force"]
+	path = lib/--force
+	url = https://github.com/Johniel/Sphingid

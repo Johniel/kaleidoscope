@@ -1,66 +1,71 @@
-#include "parser.hpp"
+#include <iostream>
+#include <set>
+#include <map>
+#include <vector>
 
-static void HandleDefinition() {
-  if (ParseDefinition()) {
-    fprintf(stderr, "Parsed a function definition.\n");
-  } else {
-    // Skip token for error recovery.
-    getNextToken();
-  }
+#include "../lib/Sphingid/src/parser/parser.hpp"
+
+using namespace std;
+using namespace sphingid::parser;
+using namespace sphingid::ast;
+
+Parser* makeKaleidoscopeParser()
+{
+  Parser* identifierexpr = Parser::rule("<IDENTIFIEREXPR>")
+  Parser* parenexpr      = Parser::rule("<PARENEXPR>");
+  Parser* primary        = Parser::rule("<PRIMARY>");
+  Parser* binoprhs       = Parser::rule("<BINOPRHS>");
+  Parser* expression     = Parser::rule("<EXPRESSION>");
+  Parser* prototype      = Parser::rule("<PROTOTYPE>");
+  Parser* definition     = Parser::rule("<DEFINITION>");
+  Parser* toplevelexpr   = Parser::rule("<TOPLEVELEXPR>");
+  Parser* external       = Parser::rule("<EXTERNAL>");
+  Parser* numberexp      = Parser::rule("<NUMBEREXP>")->num();
+
+  // identifierexpr
+  //   ::= identifier
+  //   ::= identifier '(' expression* ')'
+  identifierexpr->oneOf(Parser::rule()->id(),
+                        Parser::rule()->id()->cons("(")->cons(")"),
+                        Parser::rule()->id()->cons("(")->rep(expression)->cons(")"));
+
+  // parenexpr ::= '(' expression ')'
+  parenexpr->cons("(")->nt(expression)->cons(")");
+
+  // primary
+  //   ::= identifierexpr
+  //   ::= numberexpr
+  //   ::= parenexpr
+  primary->oneOf(identifierexpr, numberexpr, parenexpr);
+
+  // binoprhs
+  //   ::= ('+' primary)*
+  binoprhs->rep(Parser::rule()->cons("+")->nt(primary));
+
+
+  // expression
+  //   ::= primary binoprhs
+  expression->nt(primary)->nt(binoprhs);
+
+  // prototype
+  //   ::= id '(' id* ')'
+  prototype->id()->cons("(")->rep(Parser::rule()->id())->cons(")");
+
+  // definition ::= 'def' prototype expression
+  definition->cons("def")->nt(prototype)->nt(expression);
+
+  /// toplevelexpr ::= expression
+  toplevelexpr->nt(expression);
+
+  return toplevelexpr;
 }
-
-static void HandleExtern() {
-  if (ParseExtern()) {
-    fprintf(stderr, "Parsed an extern\n");
-  } else {
-    // Skip token for error recovery.
-    getNextToken();
-  }
-}
-
-static void HandleTopLevelExpression() {
-  // Evaluate a top-level expression into an anonymous function.
-  if (ParseTopLevelExpr()) {
-    fprintf(stderr, "Parsed a top-level expr\n");
-  } else {
-    // Skip token for error recovery.
-    getNextToken();
-  }
-}
-
-/// top ::= definition | external | expression | ';'
-static void MainLoop() {
-  while (1) {
-    fprintf(stderr, "ready> ");
-    switch (CurTok) {
-    case tok_eof:    return;
-    case ';':        getNextToken(); break;  // ignore top-level semicolons.
-    case tok_def:    HandleDefinition(); break;
-    case tok_extern: HandleExtern(); break;
-    default:         HandleTopLevelExpression(); break;
-    }
-  }
-}
-
-//===----------------------------------------------------------------------===//
-// Main driver code.
-//===----------------------------------------------------------------------===//
 
 int main(int argc, char *argv[])
 {
-  // Install standard binary operators.
-  // 1 is lowest precedence.
-  BinopPrecedence['<'] = 10;
-  BinopPrecedence['+'] = 20;
-  BinopPrecedence['-'] = 20;
-  BinopPrecedence['*'] = 40;  // highest.
-
-  // Prime the first token.
-  fprintf(stderr, "ready> ");
-  getNextToken();
-
-  // Run the main "interpreter loop" now.
-  MainLoop();
+  // arithmetic();
+  // add_op();
+  // sphingid_syntax();
+  Parser* kaleidoscope = makeKaleidoscopeParser();
 
   return 0;
 }
