@@ -2,50 +2,46 @@
 #include <set>
 #include <map>
 #include <vector>
+#include <cassert>
 
 #include "../lib/Sphingid/src/parser/parser.hpp"
 
+#include "./ast/ast.hpp"
+
 using namespace std;
+
+using namespace kaleidoscope::ast;
 using namespace sphingid::parser;
-using namespace sphingid::ast;
 
 Parser* makeKaleidoscopeParser()
 {
-  Parser* identifierexpr = Parser::rule("<IDENTIFIEREXPR>")
-  Parser* parenexpr      = Parser::rule("<PARENEXPR>");
-  Parser* primary        = Parser::rule("<PRIMARY>");
-  Parser* binoprhs       = Parser::rule("<BINOPRHS>");
-  Parser* expression     = Parser::rule("<EXPRESSION>");
-  Parser* prototype      = Parser::rule("<PROTOTYPE>");
-  Parser* definition     = Parser::rule("<DEFINITION>");
-  Parser* toplevelexpr   = Parser::rule("<TOPLEVELEXPR>");
-  Parser* external       = Parser::rule("<EXTERNAL>");
-  Parser* numberexp      = Parser::rule("<NUMBEREXP>")->num();
+  Parser* identifierexp = Parser::rule("<IDENTIFIEREXPR>");
+  Parser* parenexp      = Parser::rule("<PARENEXPR>");
+  Parser* primary       = Parser::rule("<PRIMARY>");
+  Parser* expression    = Parser::rule("<EXPRESSION>");
+  Parser* prototype     = Parser::rule<Prototype>("<PROTOTYPE>");
+  Parser* definition    = Parser::rule<FnDef>("<DEFINITION>");
+  Parser* numberexp     = Parser::rule<kaleidoscope::ast::Number>("<NUMBEREXP>")->num();
 
   // identifierexpr
   //   ::= identifier
   //   ::= identifier '(' expression* ')'
-  identifierexpr->oneOf(Parser::rule()->id(),
-                        Parser::rule()->id()->cons("(")->cons(")"),
-                        Parser::rule()->id()->cons("(")->rep(expression)->cons(")"));
+  identifierexp->oneOf(Parser::rule<Var>()->id(),
+                       Parser::rule<FnCall>()->id()->cons("(")->cons(")"),
+                       Parser::rule<FnCall>()->id()->cons("(")->rep(expression)->cons(")"));
 
-  // parenexpr ::= '(' expression ')'
-  parenexpr->cons("(")->nt(expression)->cons(")");
+  // parenexp ::= '(' expression ')'
+  parenexp->cons("(")->nt(expression)->cons(")");
 
   // primary
-  //   ::= identifierexpr
+  //   ::= identifierexp
   //   ::= numberexpr
-  //   ::= parenexpr
-  primary->oneOf(identifierexpr, numberexpr, parenexpr);
-
-  // binoprhs
-  //   ::= ('+' primary)*
-  binoprhs->rep(Parser::rule()->cons("+")->nt(primary));
-
+  //   ::= parenexp
+  primary->oneOf(identifierexp, numberexp, parenexp);
 
   // expression
   //   ::= primary binoprhs
-  expression->nt(primary)->nt(binoprhs);
+  expression->opL(primary, Parser::rule()->cons("+"), primary);
 
   // prototype
   //   ::= id '(' id* ')'
@@ -55,17 +51,16 @@ Parser* makeKaleidoscopeParser()
   definition->cons("def")->nt(prototype)->nt(expression);
 
   /// toplevelexpr ::= expression
-  toplevelexpr->nt(expression);
+  Parser* program = Parser::rule<Root>("<PROGRAM>")->rep(expression);
 
-  return toplevelexpr;
+  return program;
 }
 
 int main(int argc, char *argv[])
 {
-  // arithmetic();
-  // add_op();
-  // sphingid_syntax();
   Parser* kaleidoscope = makeKaleidoscopeParser();
-
+  Lexer* lexer = new Lexer();
+  kaleidoscope::ast::Root* root = (kaleidoscope::ast::Root*)kaleidoscope->parse(lexer);
+  cout << root->str() << endl;
   return 0;
 }
