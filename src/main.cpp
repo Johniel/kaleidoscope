@@ -15,20 +15,21 @@ using namespace sphingid::parser;
 
 Parser* makeKaleidoscopeParser()
 {
-  Parser* identifierexp = Parser::rule("<IDENTIFIEREXPR>");
-  Parser* parenexp      = Parser::rule("<PARENEXPR>");
-  Parser* primary       = Parser::rule("<PRIMARY>");
-  Parser* expression    = Parser::rule("<EXPRESSION>");
-  Parser* prototype     = Parser::rule<Prototype>("<PROTOTYPE>");
-  Parser* definition    = Parser::rule<FnDef>("<DEFINITION>");
-  Parser* numberexp     = Parser::rule<kaleidoscope::ast::Number>("<NUMBEREXP>")->num();
+  Parser* identifier = Parser::rule("<IDENTIFIEREXPR>");
+  Parser* parenexp   = Parser::rule("<PARENEXPR>");
+  Parser* primary    = Parser::rule("<PRIMARY>");
+  Parser* expression = Parser::rule("<EXPRESSION>");
+  Parser* prototype  = Parser::rule<Prototype>("<PROTOTYPE>");
+  Parser* definition = Parser::rule<FnDef>("<DEFINITION>");
+  Parser* numberexp  = Parser::rule<kaleidoscope::ast::Number>("<NUMBEREXP>")->num();
+  Parser* variable   = Parser::rule<Var>("<VARIABLE>")->id({"(", ")", "<", ">", "{", "}", "[", "]"});
 
   // identifierexpr
   //   ::= identifier
   //   ::= identifier '(' expression* ')'
-  identifierexp->oneOf(Parser::rule<Var>()->id(),
-                       Parser::rule<FnCall>()->id()->cons("(")->cons(")"),
-                       Parser::rule<FnCall>()->id()->cons("(")->rep(expression)->cons(")"));
+  identifier->oneOf(variable,
+                    Parser::rule<FnCall>("<FUN CALL>")->nt(variable)->cons("(")->cons(")"),
+                    Parser::rule<FnCall>("<FUN CALL>")->nt(variable)->cons("(")->rep(expression)->cons(")"));
 
   // parenexp ::= '(' expression ')'
   parenexp->cons("(")->nt(expression)->cons(")");
@@ -37,21 +38,22 @@ Parser* makeKaleidoscopeParser()
   //   ::= identifierexp
   //   ::= numberexpr
   //   ::= parenexp
-  primary->oneOf(identifierexp, numberexp, parenexp);
+  primary->oneOf(identifier, numberexp, parenexp);
 
   // expression
   //   ::= primary binoprhs
-  expression->opL(primary, Parser::rule()->cons("+"), primary);
+  expression->oneOf(Parser::rule<BinaryOp>()->nt(primary)->cons("+")->nt(expression),
+                    primary);
 
   // prototype
   //   ::= id '(' id* ')'
-  prototype->id()->cons("(")->rep(Parser::rule()->id())->cons(")");
+  prototype->cons("def")->nt(variable)->cons("(")->rep(variable)->cons(")");
 
   // definition ::= 'def' prototype expression
-  definition->cons("def")->nt(prototype)->nt(expression);
+  definition->nt(prototype)->nt(expression);
 
   /// toplevelexpr ::= expression
-  Parser* program = Parser::rule<Root>("<PROGRAM>")->rep(expression);
+  Parser* program = Parser::rule<Root>("<PROGRAMS>")->rep(Parser::rule("<PROGRAM>")->oneOf(definition, expression));
 
   return program;
 }
