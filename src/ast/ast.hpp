@@ -165,7 +165,7 @@ namespace kaleidoscope {
       virtual std::string str(void)
       {
         std::string s;
-        for (auto& i : v_) s += i->str();
+        for (auto& i : v_) s += i->str() + "\n\n";
         return s;
       }
       static sphingid::ast::Node* make(std::vector<sphingid::ast::Node*> v)
