@@ -1,2 +1,4 @@
 def fib(x)
-    1 + 2 + x
+    fib_(x - 1) + fib__(x - 2)
+
+print(f(10))

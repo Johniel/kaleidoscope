@@ -69,11 +69,8 @@ namespace kaleidoscope {
       }
       static sphingid::ast::Node* make(std::vector<sphingid::ast::Node*> v)
       {
-        if (v.size() != 3) {
-          for (int i = 0; i < v.size(); ++i) {
-            std::cout << i << ": " << v[i]->str() << std::endl;
-          }
-          assert(v.size() == 3);
+        for (int i = 0; i < v.size(); ++i) {
+          std::cout << "v[" << i << "]: " << v[i]->str() << std::endl;
         }
 
         assert(dynamic_cast<Exp*>(v[0]));
@@ -99,6 +96,11 @@ namespace kaleidoscope {
       static sphingid::ast::Node* make(std::vector<sphingid::ast::Node*> v)
       {
         assert(1 <= v.size());
+        assert(v[1]->str() == "(");
+        assert(v.back()->str() == ")");
+        v.erase(v.begin() + 1);
+        v.pop_back();
+
         std::vector<Exp*> u;
         for (int i = 1; i < v.size(); ++i) {
           Exp* p = dynamic_cast<Exp*>(v[i]);

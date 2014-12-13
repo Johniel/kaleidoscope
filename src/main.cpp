@@ -17,7 +17,7 @@ Parser* makeKaleidoscopeParser()
 {
   Parser* identifier = Parser::rule("<IDENTIFIEREXPR>");
   Parser* parenexp   = Parser::rule("<PARENEXPR>");
-  Parser* primary    = Parser::rule("<PRIMARY>");
+  Parser* primary    = Parser::rule<Exp>("<PRIMARY>");
   Parser* expression = Parser::rule("<EXPRESSION>");
   Parser* prototype  = Parser::rule<Prototype>("<PROTOTYPE>");
   Parser* definition = Parser::rule<FnDef>("<DEFINITION>");
@@ -27,9 +27,9 @@ Parser* makeKaleidoscopeParser()
   // identifierexpr
   //   ::= identifier
   //   ::= identifier '(' expression* ')'
-  identifier->oneOf(variable,
-                    Parser::rule<FnCall>("<FUN CALL>")->nt(variable)->cons("(")->cons(")"),
-                    Parser::rule<FnCall>("<FUN CALL>")->nt(variable)->cons("(")->rep(expression)->cons(")"));
+  identifier->oneOf(Parser::rule<FnCall>("<FUN CALL>")->nt(variable)->cons("(")->cons(")"),
+                    Parser::rule<FnCall>("<FUN CALL ARGS>")->nt(variable)->cons("(")->rep(expression)->cons(")"),
+                    variable);
 
   // parenexp ::= '(' expression ')'
   parenexp->cons("(")->nt(expression)->cons(")");
@@ -43,6 +43,7 @@ Parser* makeKaleidoscopeParser()
   // expression
   //   ::= primary binoprhs
   expression->oneOf(Parser::rule<BinaryOp>()->nt(primary)->cons("+")->nt(expression),
+                    Parser::rule<BinaryOp>()->nt(primary)->cons("-")->nt(expression),
                     primary);
 
   // prototype
