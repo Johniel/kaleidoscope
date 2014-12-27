@@ -114,6 +114,38 @@ namespace kaleidoscope {
       std::vector<Exp*> args_;
     };
 
+    class IfExp : public Exp {
+    public:
+      IfExp(Exp* cond, Exp* then_exp, Exp* else_exp) :
+        cond_(cond), then_exp_(then_exp), else_exp_(else_exp) {}
+      static sphingid::ast::Node* make(std::vector<sphingid::ast::Node*> v)
+      {
+        // v[0] = if
+        // v[1] = exp
+        // v[2] = then
+        // v[3] = exp
+        // v[4] = else
+        // v[5] = exp
+        assert(v.size() == 6);
+        assert(v[0]->str() == "if");
+        assert(v[2]->str() == "then");
+        assert(v[4]->str() == "else");
+        Exp* a = dynamic_cast<Exp*>(v[1]);
+        Exp* b = dynamic_cast<Exp*>(v[3]);
+        Exp* c = dynamic_cast<Exp*>(v[5]);
+        assert(a && b && c);
+        return new IfExp(a, b, c);
+      }
+      virtual std::string str()
+      {
+        return "(if " + cond_->str() + " " + then_exp_->str() + " " + else_exp_->str() + ")";
+      }
+    private:
+      Exp* cond_;
+      Exp* then_exp_;
+      Exp* else_exp_;
+    };
+
     class Prototype : public sphingid::ast::Node
     {
     public:

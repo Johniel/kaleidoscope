@@ -1,4 +1,4 @@
-def fib(x)
-    fib_(x - 1) + fib__(x - 2)
+def add(a b)
+    a + b
 
-print(f(10))
+add(25252 +  1192)

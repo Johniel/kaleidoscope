@@ -23,6 +23,7 @@ Parser* makeKaleidoscopeParser()
   Parser* definition = Parser::rule<FnDef>("<DEFINITION>");
   Parser* numberexp  = Parser::rule<kaleidoscope::ast::Number>("<NUMBEREXP>")->num();
   Parser* variable   = Parser::rule<Var>("<VARIABLE>")->id({"(", ")", "<", ">", "{", "}", "[", "]"});
+  Parser* ifexp      = Parser::rule<IfExp>("IF");
 
   // identifierexpr
   //   ::= identifier
@@ -34,11 +35,14 @@ Parser* makeKaleidoscopeParser()
   // parenexp ::= '(' expression ')'
   parenexp->cons("(")->nt(expression)->cons(")");
 
+  // ifexp :== if expression then expression else expression
+  ifexp->cons("if")->nt(expression)->cons("then")->nt(expression)->cons("else")->nt(expression);
+
   // primary
   //   ::= identifierexp
   //   ::= numberexpr
   //   ::= parenexp
-  primary->oneOf(identifier, numberexp, parenexp);
+  primary->oneOf(ifexp, identifier, numberexp, parenexp);
 
   // expression
   //   ::= primary binoprhs
